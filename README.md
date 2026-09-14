@@ -28,11 +28,23 @@ Useful options:
     --judge-votes N          judge calls per assertion, averaged; default 3
     --concurrency N          provider calls in flight at once; default 4
     --retries N              retries per call on rate limits and server errors; default 2
+    --cache PATH             sqlite file of cached replies; default .evalgate\cache.db
+    --no-cache               call the provider even for prompts seen before
 
 The fake provider picks the reply whose key is the longest substring of the
 prompt, so a replies file can answer both completion prompts (key on the
 customer's question) and judge prompts (key on the criterion text). The whole
 test suite and the `--provider fake` path run with zero network calls.
+
+## Cache
+
+Every reply is stored in `.evalgate\cache.db` (gitignored), keyed on the
+model, the exact prompt and the request settings. Re-running an unchanged
+suite makes no provider calls and returns the same answers; editing a prompt
+template misses for every case that uses it. Judge votes are cached one by
+one. The run prints `cache: N hits, M misses` after the table. Use
+`--no-cache` for fresh samples, and `--cache PATH` to put the file somewhere
+a CI cache can keep it between runs.
 
 ## Suite format
 
@@ -80,8 +92,8 @@ rather than silently passing.
 ## Status
 
 Done: models, loader, Anthropic and fake providers, retries with backoff,
-deterministic scorers, LLM judge with structured output and n-vote, async
-runner with a concurrency limit, `run` command with a console table.
+sqlite reply cache, deterministic scorers, LLM judge with structured output
+and n-vote, async runner with a concurrency limit, `run` command with a
+console table.
 
-Not yet: response cache, baselines and regression diff, GitHub Actions
-workflows, demo app.
+Not yet: baselines and regression diff, GitHub Actions workflows, demo app.
