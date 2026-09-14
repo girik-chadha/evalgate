@@ -48,3 +48,10 @@ Alternative: retry on any exception.
 Chosen because retrying a bug in our own code would disguise it as flakiness and cost several
 paid calls per case before it surfaced. The provider is the only layer that can tell a timeout
 from a programming error, so it makes that classification.
+
+## Scorers are async even when they do no I/O
+
+Alternative: sync deterministic scorers, an async judge scorer, and a runner that checks which
+kind it holds.
+Chosen because the judge scorer has to be async (it calls a model), and one signature means the
+runner has a single code path. Awaiting a coroutine that never suspends costs nothing measurable.
