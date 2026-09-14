@@ -1,6 +1,6 @@
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Self
+from typing import Any, Self
 
 import yaml
 
@@ -36,7 +36,9 @@ class FakeProvider:
             raise ValueError(f"{path}: expected a mapping of prompt substring to reply")
         return cls(data)
 
-    async def complete(self, prompt: str) -> str:
+    async def complete(
+        self, prompt: str, *, response_schema: dict[str, Any] | None = None
+    ) -> str:
         self.calls.append(prompt)
         if len(self.calls) <= self._fail_first:
             raise ProviderError(f"simulated failure {len(self.calls)}")

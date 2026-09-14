@@ -42,12 +42,13 @@ Chosen because the prompt is the thing under test: a prompt edit must be a file 
 so that CI has an event to react to. One placeholder needs no engine and no escaping rules,
 so `str.replace` is enough until a real case needs more.
 
-## Providers raise ProviderError for transient failures, and only those are retried
+## Providers raise ProviderError and mark whether it is worth retrying
 
-Alternative: retry on any exception.
+Alternative: retry on any exception, or retry every ProviderError.
 Chosen because retrying a bug in our own code would disguise it as flakiness and cost several
-paid calls per case before it surfaced. The provider is the only layer that can tell a timeout
-from a programming error, so it makes that classification.
+paid calls before it surfaced, and retrying a bad API key costs three attempts to learn one
+fact. Only the provider can tell a rate limit from a programming error or a bad key, so it
+raises ProviderError with `retryable` set; nothing above it looks at HTTP status codes.
 
 ## Scorers are async even when they do no I/O
 
@@ -69,3 +70,11 @@ Alternative: copy `model` from the suite file into the report.
 Chosen because a report is evidence of what actually ran. The suite may say claude-sonnet-4-5
 while the run used the fake provider; a baseline produced that way must never be mistaken for
 a real one.
+
+## The Anthropic provider speaks HTTP directly instead of using the SDK
+
+Alternative: the official `anthropic` package.
+Chosen because the SDK retries 429s and 5xx itself, which would sit underneath our own retry
+layer and double every wait, and because the request is one POST with four fields. Owning the
+call means owning the error classification, which is the part this tool is about. The cost is
+tracking API changes by hand.
