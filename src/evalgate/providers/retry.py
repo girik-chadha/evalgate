@@ -1,3 +1,4 @@
+from collections.abc import Mapping
 from typing import Any
 
 import anyio
@@ -22,6 +23,10 @@ class RetryingProvider:
     @property
     def model(self) -> str:
         return self._inner.model
+
+    @property
+    def params(self) -> Mapping[str, Any]:
+        return self._inner.params
 
     async def complete(
         self, prompt: str, *, response_schema: dict[str, Any] | None = None

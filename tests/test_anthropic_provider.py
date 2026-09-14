@@ -117,3 +117,12 @@ def test_timeouts_are_retryable() -> None:
     with pytest.raises(ProviderError, match="ReadTimeout") as info:
         complete(make_provider(handler))
     assert info.value.retryable is True
+
+
+def test_params_name_everything_that_shapes_the_reply() -> None:
+    provider = make_provider(lambda _: message_response("ok"), max_tokens=512)
+    assert provider.params == {
+        "max_tokens": 512,
+        "temperature": None,
+        "api_version": "2023-06-01",
+    }

@@ -1,3 +1,4 @@
+from collections.abc import Mapping
 from typing import Any
 
 import httpx
@@ -35,6 +36,14 @@ class AnthropicProvider:
     @property
     def model(self) -> str:
         return self._model
+
+    @property
+    def params(self) -> Mapping[str, Any]:
+        return {
+            "max_tokens": self._max_tokens,
+            "temperature": self._temperature,
+            "api_version": API_VERSION,
+        }
 
     async def complete(
         self, prompt: str, *, response_schema: dict[str, Any] | None = None

@@ -14,6 +14,7 @@ class FakeProvider:
     """
 
     model = "fake"
+    params: Mapping[str, Any] = {}
 
     def __init__(
         self,

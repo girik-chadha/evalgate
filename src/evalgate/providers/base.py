@@ -1,3 +1,4 @@
+from collections.abc import Mapping
 from typing import Any, Protocol
 
 
@@ -24,6 +25,15 @@ class ProviderError(Exception):
 class Provider(Protocol):
     @property
     def model(self) -> str: ...
+
+    @property
+    def params(self) -> Mapping[str, Any]:
+        """Request settings other than model and prompt that change the reply.
+
+        They form part of the cache key, so anything that would make the same
+        prompt produce a different reply belongs here.
+        """
+        ...
 
     async def complete(
         self, prompt: str, *, response_schema: dict[str, Any] | None = None

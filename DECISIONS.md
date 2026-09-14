@@ -108,3 +108,18 @@ Chosen because current models reject `temperature` with a 400, so determinism by
 on offer, and sampling variety is what makes three votes informative rather than three copies.
 A separate model stops a model grading its own style, and lets the judge stay pinned while the
 model under test changes, which is the comparison the tool exists to make.
+
+## The cache is a provider wrapper keyed on model, prompt and request params
+
+Alternative: a cache inside the runner keyed on case id, or a TTL cache keyed on prompt alone.
+Chosen because the case id is not what determines the reply; the prompt, the model and settings
+such as max_tokens are. Content addressing means an edited prompt misses and an unchanged one
+hits, with no invalidation logic to get wrong, and wrapping the provider means judge calls are
+cached by the same code. There is no TTL: an unchanged suite re-runs for free and returns the
+same answers, and `--no-cache` exists for when fresh samples are wanted.
+
+## Every cache write commits immediately
+
+Alternative: one transaction per run, committed at the end.
+Chosen because a run killed at call 150 of 200 should keep 150 paid replies. A commit per write
+costs milliseconds against network calls that cost hundreds.
