@@ -55,3 +55,17 @@ Alternative: sync deterministic scorers, an async judge scorer, and a runner tha
 kind it holds.
 Chosen because the judge scorer has to be async (it calls a model), and one signature means the
 runner has a single code path. Awaiting a coroutine that never suspends costs nothing measurable.
+
+## The runner checks every assertion type has a scorer before making any call
+
+Alternative: look scorers up lazily and fail on the first assertion nobody can score.
+Chosen because with a real provider the lazy version pays for every case before the failure
+and then throws the whole run away. Anything that can be validated up front is validated
+before the first paid call.
+
+## A report records the provider's model, not the suite's
+
+Alternative: copy `model` from the suite file into the report.
+Chosen because a report is evidence of what actually ran. The suite may say claude-sonnet-4-5
+while the run used the fake provider; a baseline produced that way must never be mistaken for
+a real one.
