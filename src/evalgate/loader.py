@@ -3,12 +3,13 @@ from pathlib import Path
 import yaml
 from pydantic import ValidationError
 
+from evalgate.errors import EvalgateError
 from evalgate.models import Suite
 
 PLACEHOLDER = "{{input}}"
 
 
-class SuiteError(Exception):
+class SuiteError(EvalgateError):
     """The suite or its prompt templates cannot be used. Message is user-facing."""
 
 
