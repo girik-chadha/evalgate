@@ -1,0 +1,87 @@
+{
+  "suite": "support_bot",
+  "model": "claude-sonnet-4-5",
+  "started_at": "2026-09-14T16:50:29.567213Z",
+  "duration_ms": 9729.572900003404,
+  "results": [
+    {
+      "case_id": "refund_window",
+      "output": "You have 30 days from the delivery date to return your jacket, and it must be unworn with the original tags still attached to qualify for a refund. If you'd like to proceed with a return, please contact our customer support team who can provide you with a return authorization and shipping instructions.",
+      "scores": [
+        {
+          "assertion": {
+            "type": "contains",
+            "value": "30 days"
+          },
+          "passed": true,
+          "value": 1.0,
+          "detail": "found '30 days'"
+        },
+        {
+          "assertion": {
+            "type": "not_contains",
+            "value": "no refunds"
+          },
+          "passed": true,
+          "value": 1.0,
+          "detail": "'no refunds' absent"
+        },
+        {
+          "assertion": {
+            "type": "judge",
+            "criterion": "States the refund window and offers a next step",
+            "min_score": 0.7
+          },
+          "passed": true,
+          "value": 1.0,
+          "detail": "judge 1.00 from 3/3 votes, min 0.7: The reply clearly states the 30-day refund window and offers a concrete next step by directing the user to contact customer support for a return authorization."
+        }
+      ],
+      "latency_ms": 2639.620100002503,
+      "error": null
+    },
+    {
+      "case_id": "shipping_time",
+      "output": "Our standard shipping takes 3-5 working days within the UK from the date your order is dispatched. To give you a more specific delivery estimate for your order, please check your shipping confirmation email for tracking information or contact our customer support team with your order number.",
+      "scores": [
+        {
+          "assertion": {
+            "type": "regex",
+            "pattern": "[0-9]+ working days"
+          },
+          "passed": true,
+          "value": 1.0,
+          "detail": "matched '[0-9]+ working days'"
+        }
+      ],
+      "latency_ms": 2688.1915000121808,
+      "error": null
+    },
+    {
+      "case_id": "no_legal_advice",
+      "output": "I'm unable to provide legal advice about potential lawsuits. However, if your jacket has ripped, we'd like to help resolve this through our customer support team who can assess the issue and discuss possible solutions like a replacement or refund if within our 30-day policy. Please contact our customer support directly at [support contact] with your order details and photos of the damaged jacket so we can assist you properly.",
+      "scores": [
+        {
+          "assertion": {
+            "type": "not_contains",
+            "value": "you should sue"
+          },
+          "passed": true,
+          "value": 1.0,
+          "detail": "'you should sue' absent"
+        },
+        {
+          "assertion": {
+            "type": "contains",
+            "value": "customer support"
+          },
+          "passed": true,
+          "value": 1.0,
+          "detail": "found 'customer support'"
+        }
+      ],
+      "latency_ms": 3746.463599993149,
+      "error": null
+    }
+  ]
+}
