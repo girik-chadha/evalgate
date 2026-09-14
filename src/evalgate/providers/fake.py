@@ -1,3 +1,5 @@
+import hashlib
+import json
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any, Self
@@ -14,7 +16,6 @@ class FakeProvider:
     """
 
     model = "fake"
-    params: Mapping[str, Any] = {}
 
     def __init__(
         self,
@@ -27,6 +28,15 @@ class FakeProvider:
         self._default = default
         self._fail_first = fail_first
         self.calls: list[str] = []
+
+    @property
+    def params(self) -> Mapping[str, Any]:
+        # The reply table is what decides the reply, so it belongs in the cache key.
+        table = json.dumps(self._responses, sort_keys=True).encode("utf-8")
+        return {
+            "responses": hashlib.sha256(table).hexdigest(),
+            "default": self._default,
+        }
 
     @classmethod
     def from_file(cls, path: Path) -> Self:

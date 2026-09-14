@@ -53,7 +53,8 @@ def test_second_identical_call_never_reaches_the_provider(tmp_path: Path) -> Non
         assert inner.calls == ["hello"]
         assert (cache.hits, cache.misses) == (1, 1)
         assert provider.model == "fake"
-        assert provider.params == {}
+        assert provider.params["default"] == ""
+        assert len(provider.params["responses"]) == 64
 
 
 def test_schema_is_part_of_the_key(tmp_path: Path) -> None:
@@ -76,3 +77,11 @@ def test_different_models_do_not_share_entries(tmp_path: Path) -> None:
         second = CachingProvider(NamedFake("two"), cache)
         assert complete(first, "hello") == "one"
         assert complete(second, "hello") == "two"
+
+
+def test_reply_table_is_part_of_the_fake_key(tmp_path: Path) -> None:
+    with Cache(tmp_path / "cache.db") as cache:
+        one = CachingProvider(FakeProvider({"hello": "one"}), cache)
+        two = CachingProvider(FakeProvider({"hello": "two"}), cache)
+        assert complete(one, "hello") == "one"
+        assert complete(two, "hello") == "two"
