@@ -92,3 +92,11 @@ Alternative: `score(output, assertion)`, which is all the deterministic scorers 
 Chosen because a judge cannot tell whether a reply "offers a next step" without seeing the
 question. The signature was widened when the second implementation arrived rather than
 guessed up front; the deterministic scorers simply ignore the extra argument.
+
+## The judge takes several votes and applies the threshold in code
+
+Alternative: one judge call that returns pass or fail directly.
+Chosen because a single sample hides how sure the judge is, and asking the model for a verdict
+hands it the policy decision. Each vote is a structured 0 to 1 score; the mean is compared to
+`min_score` in code, so the threshold is visible, versioned and re-tunable without re-running.
+Votes that are not valid verdicts are dropped, and no valid votes is a fail, never a pass.
