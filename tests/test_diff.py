@@ -64,8 +64,20 @@ def test_failure_already_in_the_baseline_is_accepted() -> None:
 def test_policy_can_tolerate_new_failures() -> None:
     base = report(a=(True, 1.0), b=(True, 1.0))
     current = report(a=(False, 0.0), b=(True, 1.0))
-    assert compare(base, current, Policy(max_new_failures=1)).regressed is False
-    assert compare(base, current, Policy(max_new_failures=0)).regressed is True
+    lenient = Policy(max_new_failures=1, max_score_drop=1.0)
+    strict = Policy(max_new_failures=0, max_score_drop=1.0)
+    assert compare(base, current, lenient).regressed is False
+    assert compare(base, current, strict).regressed is True
+
+
+def test_the_two_levers_are_independent() -> None:
+    base = report(a=(True, 1.0), b=(True, 1.0))
+    current = report(a=(False, 0.0), b=(True, 1.0))
+    diff = compare(base, current, Policy(max_new_failures=1))
+    assert diff.new_failures == ["a"]
+    assert diff.regressed
+    assert len(diff.violations) == 1
+    assert "fell 0.50" in diff.violations[0]
 
 
 def test_score_drop_is_measured_over_shared_cases_only() -> None:
