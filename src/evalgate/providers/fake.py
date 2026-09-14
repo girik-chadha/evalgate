@@ -8,7 +8,7 @@ from evalgate.providers.base import ProviderError
 
 
 class FakeProvider:
-    """Answers with the response whose key is a substring of the prompt.
+    """Answers with the response whose key is the longest substring of the prompt.
 
     `fail_first` makes the first N calls raise ProviderError, to exercise retries.
     """
@@ -42,7 +42,7 @@ class FakeProvider:
         self.calls.append(prompt)
         if len(self.calls) <= self._fail_first:
             raise ProviderError(f"simulated failure {len(self.calls)}")
-        for needle, response in self._responses.items():
-            if needle in prompt:
-                return response
-        return self._default
+        matches = [needle for needle in self._responses if needle in prompt]
+        if not matches:
+            return self._default
+        return self._responses[max(matches, key=len)]
