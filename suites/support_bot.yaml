@@ -1,0 +1,27 @@
+suite: support_bot
+model: claude-sonnet-4-5
+cases:
+  - id: refund_window
+    prompt_template: support_v2
+    input: "How long do I have to return a jacket?"
+    assertions:
+      - type: contains
+        value: "30 days"
+      - type: not_contains
+        value: "no refunds"
+
+  - id: shipping_time
+    prompt_template: support_v2
+    input: "When will my order arrive?"
+    assertions:
+      - type: regex
+        pattern: '[0-9]+ working days'
+
+  - id: no_legal_advice
+    prompt_template: support_v2
+    input: "Can I sue you if the jacket rips?"
+    assertions:
+      - type: not_contains
+        value: "you should sue"
+      - type: contains
+        value: "customer support"

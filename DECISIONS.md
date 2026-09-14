@@ -34,3 +34,10 @@ regression becomes a numeric comparison rather than a count of booleans.
 Alternative: leave errored cases out of the pass rate and mean score.
 Chosen because retries live in the runner, so an error that reaches a result is real.
 Excluding it would let a flaky provider make a run look better than the previous one.
+
+## Prompt templates are text files beside the suite, with one `{{input}}` placeholder
+
+Alternative: templates inline in the suite YAML, or a template engine such as Jinja.
+Chosen because the prompt is the thing under test: a prompt edit must be a file diff in a PR
+so that CI has an event to react to. One placeholder needs no engine and no escaping rules,
+so `str.replace` is enough until a real case needs more.
