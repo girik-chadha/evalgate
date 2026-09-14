@@ -17,7 +17,7 @@ REGEX = RegexAssertion(type="regex", pattern="[0-9]+ days")
 
 
 def score(output: str, assertion: Assertion) -> Score:
-    return anyio.run(DeterministicScorer().score, output, assertion)
+    return anyio.run(DeterministicScorer().score, "the question", output, assertion)
 
 
 @pytest.mark.parametrize(

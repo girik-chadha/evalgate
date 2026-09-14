@@ -85,3 +85,10 @@ Alternative: a retry loop inside the runner around the completion call.
 Chosen because the judge scorer also calls a provider and needs the same retries. Wrapping once
 at composition time gives every provider call in the process the same policy, and the runner
 shrinks to orchestration. The fake provider stays retry-free so tests can count calls exactly.
+
+## Scorers receive the user's input as well as the model's output
+
+Alternative: `score(output, assertion)`, which is all the deterministic scorers needed.
+Chosen because a judge cannot tell whether a reply "offers a next step" without seeing the
+question. The signature was widened when the second implementation arrived rather than
+guessed up front; the deterministic scorers simply ignore the extra argument.

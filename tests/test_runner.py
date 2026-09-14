@@ -98,7 +98,7 @@ def test_provider_failure_is_recorded_instead_of_raised() -> None:
 
 
 class FailingScorer:
-    async def score(self, output: str, assertion: Assertion) -> Score:
+    async def score(self, input: str, output: str, assertion: Assertion) -> Score:
         raise ProviderError("judge is down", retryable=False)
 
 

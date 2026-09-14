@@ -43,7 +43,8 @@ async def run_suite(
             if output is not None:
                 try:
                     scores = [
-                        await scorers[a.type].score(output, a) for a in case.assertions
+                        await scorers[a.type].score(case.input, output, a)
+                        for a in case.assertions
                     ]
                 except ProviderError as e:
                     error = f"scoring failed: {e}"

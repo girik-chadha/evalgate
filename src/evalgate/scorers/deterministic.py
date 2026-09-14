@@ -8,7 +8,7 @@ from evalgate.models import (
 
 
 class DeterministicScorer:
-    async def score(self, output: str, assertion: Assertion) -> Score:
+    async def score(self, input: str, output: str, assertion: Assertion) -> Score:
         match assertion:
             case ContainsAssertion(value=value):
                 passed = value in output
