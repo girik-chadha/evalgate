@@ -7,3 +7,30 @@ Alternative: evalgate/ at the repo root, importable straight from the working di
 Chosen because a flat layout lets tests pass against the working-directory copy while the
 installed package is broken (file missing from the wheel, bad entry point). src forces every
 import through the installed package, so packaging mistakes fail in CI, not on a user's machine.
+
+## Assertions are a discriminated union, not one class with optional fields
+
+Each assertion type is its own model, tagged by `type`.
+Alternative: one Assertion class with value, criterion and min_score all optional.
+Chosen because a typo, a missing field or an unknown type fails at load time with a precise
+error, and each scorer receives exactly the fields it needs instead of checking for None.
+
+## Models forbid unknown keys and are frozen
+
+Alternative: pydantic's default, which silently ignores extra keys and allows mutation.
+Chosen because the suite YAML is the public API. A misspelt key like `vlaue` would otherwise
+be dropped, the field would take a default, and the assertion would pass for the wrong reason.
+Frozen means a result cannot be edited after the runner produces it.
+
+## Score stores both passed and value
+
+Alternative: a single bool per assertion.
+Chosen because `passed` is the thresholded decision and `value` is the raw measurement.
+Keeping both means a stored baseline can be re-thresholded without re-running the model, and
+regression becomes a numeric comparison rather than a count of booleans.
+
+## A provider error is a failed case with score 0, not a skipped case
+
+Alternative: leave errored cases out of the pass rate and mean score.
+Chosen because retries live in the runner, so an error that reaches a result is real.
+Excluding it would let a flaky provider make a run look better than the previous one.
