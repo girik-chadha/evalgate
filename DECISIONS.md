@@ -100,3 +100,11 @@ Chosen because a single sample hides how sure the judge is, and asking the model
 hands it the policy decision. Each vote is a structured 0 to 1 score; the mean is compared to
 `min_score` in code, so the threshold is visible, versioned and re-tunable without re-running.
 Votes that are not valid verdicts are dropped, and no valid votes is a fail, never a pass.
+
+## The judge runs on its own model, sampled at the API default
+
+Alternative: judge with the model under test at temperature 0.
+Chosen because current models reject `temperature` with a 400, so determinism by knob is not
+on offer, and sampling variety is what makes three votes informative rather than three copies.
+A separate model stops a model grading its own style, and lets the judge stay pinned while the
+model under test changes, which is the comparison the tool exists to make.

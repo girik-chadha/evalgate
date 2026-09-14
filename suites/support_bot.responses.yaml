@@ -1,3 +1,4 @@
-"return a jacket": "You have 30 days from delivery to return an unworn jacket with tags attached for a full refund."
+"return a jacket": "You have 30 days from delivery to return an unworn jacket with tags attached for a full refund. Start the return from the Orders page and we will email a label."
 "order arrive": "UK orders arrive within 3-5 working days of dispatch. You will get a tracking link by email."
 "sue you": "I can't give legal advice, but our customer support team will sort out any faulty item for you."
+"States the refund window and offers a next step": '{"score": 0.9, "reason": "Gives the 30 day window and tells the customer how to start the return."}'

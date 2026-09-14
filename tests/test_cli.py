@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import pytest
 from typer.testing import CliRunner
 
 from evalgate.cli import app
@@ -8,8 +9,8 @@ SUITE = Path(__file__).resolve().parents[1] / "suites" / "support_bot.yaml"
 runner = CliRunner()
 
 
-def test_run_prints_a_row_per_case_and_exits_zero() -> None:
-    result = runner.invoke(app, ["run", str(SUITE)])
+def test_fake_run_prints_a_row_per_case_and_exits_zero() -> None:
+    result = runner.invoke(app, ["run", str(SUITE), "--provider", "fake"])
     assert result.exit_code == 0, result.output
     for case_id in ("refund_window", "shipping_time", "no_legal_advice"):
         assert case_id in result.output
@@ -19,7 +20,9 @@ def test_run_prints_a_row_per_case_and_exits_zero() -> None:
 def test_failing_case_exits_one(tmp_path: Path) -> None:
     replies = tmp_path / "wrong.yaml"
     replies.write_text('"return a jacket": "Sorry, no refunds."', encoding="utf-8")
-    result = runner.invoke(app, ["run", str(SUITE), "--responses", str(replies)])
+    result = runner.invoke(
+        app, ["run", str(SUITE), "--provider", "fake", "--responses", str(replies)]
+    )
     assert result.exit_code == 1
     assert "FAIL" in result.output
 
@@ -29,3 +32,16 @@ def test_unloadable_suite_exits_two(tmp_path: Path) -> None:
     bad.write_text("suite: [unclosed", encoding="utf-8")
     result = runner.invoke(app, ["run", str(bad)])
     assert result.exit_code == 2
+
+
+def test_anthropic_without_api_key_exits_two(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "")
+    result = runner.invoke(app, ["run", str(SUITE), "--provider", "anthropic"])
+    assert result.exit_code == 2
+    assert "ANTHROPIC_API_KEY" in result.output
+
+
+def test_unknown_provider_exits_two() -> None:
+    result = runner.invoke(app, ["run", str(SUITE), "--provider", "openai"])
+    assert result.exit_code == 2
+    assert "unknown provider" in result.output

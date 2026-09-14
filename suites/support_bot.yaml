@@ -9,6 +9,9 @@ cases:
         value: "30 days"
       - type: not_contains
         value: "no refunds"
+      - type: judge
+        criterion: "States the refund window and offers a next step"
+        min_score: 0.7
 
   - id: shipping_time
     prompt_template: support_v2
