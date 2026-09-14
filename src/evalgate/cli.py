@@ -8,27 +8,36 @@ import httpx
 import typer
 from rich.console import Console
 
+from evalgate.baseline import baseline_path, last_run_path, load_report, save_report
 from evalgate.cache import Cache, CachingProvider
 from evalgate.config import Settings
-from evalgate.loader import SuiteError, load_suite, load_templates
+from evalgate.diff import Policy, compare
+from evalgate.errors import EvalgateError
+from evalgate.loader import load_suite, load_templates
 from evalgate.models import RunReport, Suite
 from evalgate.providers.anthropic import AnthropicProvider
 from evalgate.providers.base import Provider
 from evalgate.providers.fake import FakeProvider
 from evalgate.providers.retry import RetryingProvider
-from evalgate.report.console import print_report
+from evalgate.report.console import print_diff, print_report
 from evalgate.runner import run_suite
 from evalgate.scorers.base import Scorer
 from evalgate.scorers.deterministic import DeterministicScorer
 from evalgate.scorers.judge import JudgeScorer
 
 DEFAULT_JUDGE_MODEL = "claude-sonnet-5"
-DEFAULT_CACHE = Path(".evalgate/cache.db")
+STATE_DIR = Path(".evalgate")
+DEFAULT_CACHE = STATE_DIR / "cache.db"
+RUNS_DIR = STATE_DIR / "runs"
 HTTP_TIMEOUT_S = 120.0
 
 app = typer.Typer(no_args_is_help=True, add_completion=False)
 stdout = Console()
 stderr = Console(stderr=True)
+
+SuitePath = Annotated[
+    Path, typer.Argument(exists=True, dir_okay=False, help="suite YAML file")
+]
 
 
 @app.callback()
@@ -38,9 +47,7 @@ def main() -> None:
 
 @app.command()
 def run(
-    suite_path: Annotated[
-        Path, typer.Argument(exists=True, dir_okay=False, help="suite YAML file")
-    ],
+    suite_path: SuitePath,
     provider: Annotated[str, typer.Option(help="anthropic or fake")] = "anthropic",
     responses: Annotated[
         Path | None,
@@ -63,8 +70,24 @@ def run(
             "--no-cache", help="call the provider even for prompts seen before"
         ),
     ] = False,
+    against: Annotated[
+        Path | None,
+        typer.Option(
+            "--baseline",
+            help="report to compare against; default <suite>.baseline.json if present",
+        ),
+    ] = None,
+    max_new_failures: Annotated[
+        int, typer.Option(min=0, help="new failures tolerated before regression")
+    ] = 0,
+    max_score_drop: Annotated[
+        float, typer.Option(min=0.0, help="mean score drop tolerated over shared cases")
+    ] = 0.05,
 ) -> None:
-    """Run a suite and print one row per case. Exits 1 if any case failed."""
+    """Run a suite, print one row per case, and compare against its baseline.
+
+    Exits 1 on a regression, or on any failing case when there is no baseline.
+    """
     if responses is None:
         responses = suite_path.with_name(f"{suite_path.stem}.responses.yaml")
     store: Cache | None = None
@@ -88,7 +111,7 @@ def run(
                 store=store,
             )
         )
-    except SuiteError as e:
+    except EvalgateError as e:
         _fail(str(e))
     finally:
         if store is not None:
@@ -98,7 +121,59 @@ def run(
         stdout.print(
             f"cache: {store.hits} hits, {store.misses} misses", highlight=False
         )
-    raise typer.Exit(0 if report.passed else 1)
+    save_report(report, last_run_path(RUNS_DIR, suite.name))
+
+    baseline_file = against or baseline_path(suite_path)
+    if against is None and not baseline_file.is_file():
+        stdout.print(
+            f"no baseline at {baseline_file}; accept this run with: "
+            f"evalgate baseline {suite_path}",
+            highlight=False,
+        )
+        raise typer.Exit(0 if report.passed else 1)
+    try:
+        accepted = load_report(baseline_file)
+    except EvalgateError as e:
+        _fail(str(e))
+    if accepted.suite != suite.name:
+        _fail(f"{baseline_file} is a baseline for suite {accepted.suite!r}")
+    policy = Policy(max_new_failures=max_new_failures, max_score_drop=max_score_drop)
+    diff = compare(accepted, report, policy)
+    print_diff(diff)
+    raise typer.Exit(1 if diff.regressed else 0)
+
+
+@app.command()
+def baseline(
+    suite_path: SuitePath,
+    output: Annotated[
+        Path | None, typer.Option(help="where to write; default <suite>.baseline.json")
+    ] = None,
+) -> None:
+    """Accept the last run of this suite as its baseline."""
+    target = output or baseline_path(suite_path)
+    try:
+        suite = load_suite(suite_path)
+        source = last_run_path(RUNS_DIR, suite.name)
+        if not source.is_file():
+            _fail(f"no recorded run for {suite.name!r}; run the suite first")
+        report = load_report(source)
+    except EvalgateError as e:
+        _fail(str(e))
+    errored = [r.case_id for r in report.results if r.error]
+    if errored:
+        _fail(
+            f"last run has errors in {', '.join(errored)}; "
+            "a baseline must be a clean measurement"
+        )
+    save_report(report, target)
+    passed = sum(r.passed for r in report.results)
+    stdout.print(
+        f"saved {target}: {len(report.results)} cases, {passed} passed, "
+        f"mean score {report.mean_score:.2f}, model {report.model}, "
+        f"run started {report.started_at:%Y-%m-%d %H:%M} UTC",
+        highlight=False,
+    )
 
 
 async def _execute(

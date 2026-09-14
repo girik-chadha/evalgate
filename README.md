@@ -17,8 +17,10 @@ root (`.env` is gitignored).
 
     evalgate run suites\support_bot.yaml
 
-Prints one row per case and exits 0 when every case passed, 1 when any case
-failed, 2 when the suite could not be loaded or the run could not start.
+Prints one row per case. Without a baseline it exits 0 when every case passed
+and 1 otherwise. With a baseline it exits 1 on a regression (see below) and 0
+otherwise, even if the baseline already had failing cases. Exit 2 means the
+suite could not be loaded or the run could not start.
 
 Useful options:
 
@@ -30,11 +32,38 @@ Useful options:
     --retries N              retries per call on rate limits and server errors; default 2
     --cache PATH             sqlite file of cached replies; default .evalgate\cache.db
     --no-cache               call the provider even for prompts seen before
+    --baseline PATH          report to compare against; default <suite>.baseline.json
+    --max-new-failures N     new failures tolerated before a regression; default 0
+    --max-score-drop X       mean score drop tolerated over shared cases; default 0.05
 
 The fake provider picks the reply whose key is the longest substring of the
 prompt, so a replies file can answer both completion prompts (key on the
 customer's question) and judge prompts (key on the criterion text). The whole
 test suite and the `--provider fake` path run with zero network calls.
+
+## Baselines
+
+    evalgate run suites\support_bot.yaml        # look at the table
+    evalgate baseline suites\support_bot.yaml   # accept that run
+    git add suites\support_bot.baseline.json
+
+`run` records its report under `.evalgate\runs\`. `baseline` copies the last
+recorded run to `<suite>.baseline.json`, which you commit: it is the accepted
+state, including any failures you have decided to live with. `baseline`
+refuses a run that had provider errors, since that is not a measurement.
+
+Every later `run` compares against it and prints a second table with one row
+per case: regressed, improved, unchanged, new, or removed. A run is a
+regression when either lever trips:
+
+- more new failures than `--max-new-failures`. A new failure is a failing case
+  the baseline did not have failing, whether it passed there or did not exist.
+- the mean score over cases present in both runs fell by more than
+  `--max-score-drop`. Added and removed cases cannot move this number.
+
+The baseline records which model produced it. When the current run used a
+different model the diff says so, which is the expected situation when you
+are testing a model swap.
 
 ## Cache
 
@@ -93,7 +122,7 @@ rather than silently passing.
 
 Done: models, loader, Anthropic and fake providers, retries with backoff,
 sqlite reply cache, deterministic scorers, LLM judge with structured output
-and n-vote, async runner with a concurrency limit, `run` command with a
-console table.
+and n-vote, async runner with a concurrency limit, `run` and `baseline`
+commands, regression diff with a two-lever policy.
 
-Not yet: baselines and regression diff, GitHub Actions workflows, demo app.
+Not yet: markdown report for PR comments, GitHub Actions workflows, demo app.
