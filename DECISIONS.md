@@ -78,3 +78,10 @@ Chosen because the SDK retries 429s and 5xx itself, which would sit underneath o
 layer and double every wait, and because the request is one POST with four fields. Owning the
 call means owning the error classification, which is the part this tool is about. The cost is
 tracking API changes by hand.
+
+## Retry is a provider wrapper, not runner logic
+
+Alternative: a retry loop inside the runner around the completion call.
+Chosen because the judge scorer also calls a provider and needs the same retries. Wrapping once
+at composition time gives every provider call in the process the same policy, and the runner
+shrinks to orchestration. The fake provider stays retry-free so tests can count calls exactly.

@@ -74,8 +74,9 @@ class Score(StrictModel):
 
 
 class CaseResult(StrictModel):
-    """`error` is set when the provider failed after retries; then
-    `output` is None, `scores` is empty and the case counts as failed."""
+    """`error` is set when the completion, or the scoring of it, failed after
+    retries. `scores` is then empty and the case counts as failed. `output` is
+    kept when the completion itself succeeded."""
 
     case_id: str
     output: str | None

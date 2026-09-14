@@ -9,6 +9,7 @@ from rich.console import Console
 from evalgate.loader import SuiteError, load_suite, load_templates
 from evalgate.providers.base import Provider
 from evalgate.providers.fake import FakeProvider
+from evalgate.providers.retry import RetryingProvider
 from evalgate.report.console import print_report
 from evalgate.runner import run_suite
 from evalgate.scorers.deterministic import DeterministicScorer
@@ -47,16 +48,10 @@ def run(
     try:
         suite = load_suite(suite_path)
         templates = load_templates(suite, suite_path.parent)
-        chosen = _build_provider(provider, responses)
+        chosen = RetryingProvider(_build_provider(provider, responses), retries=retries)
         report = anyio.run(
             partial(
-                run_suite,
-                suite,
-                templates,
-                chosen,
-                scorers,
-                concurrency=concurrency,
-                retries=retries,
+                run_suite, suite, templates, chosen, scorers, concurrency=concurrency
             )
         )
     except SuiteError as e:
