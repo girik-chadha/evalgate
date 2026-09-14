@@ -33,6 +33,7 @@ The assistant replied:
 Score how well the reply meets the criterion, from 0.0 (not at all) to 1.0 (fully).
 Give partial credit only for partial compliance. Judge the reply as written; do not
 reward length or politeness unless the criterion asks for them.
+This is vote {vote} of {votes}; score independently of any other vote.
 Respond with JSON only, in the form {{"score": <number>, "reason": "<one sentence>"}}.
 """
 
@@ -48,6 +49,9 @@ class JudgeScorer:
     Asks `votes` times, drops replies that are not valid verdicts, and passes
     when the mean score reaches the assertion's `min_score`. No valid votes at
     all is a fail, not a pass: an unreadable judge is not evidence of quality.
+
+    Each vote's prompt names its index so the votes stay distinct in the cache;
+    otherwise vote two and three would be served from vote one.
     """
 
     def __init__(self, provider: Provider, *, votes: int = 3) -> None:
@@ -57,11 +61,15 @@ class JudgeScorer:
     async def score(self, input: str, output: str, assertion: Assertion) -> Score:
         if not isinstance(assertion, JudgeAssertion):
             raise TypeError(f"judge scorer cannot score {assertion.type!r}")
-        prompt = PROMPT.format(
-            criterion=assertion.criterion, input=input, output=output
-        )
         verdicts: list[Verdict] = []
-        for _ in range(self._votes):
+        for vote in range(1, self._votes + 1):
+            prompt = PROMPT.format(
+                criterion=assertion.criterion,
+                input=input,
+                output=output,
+                vote=vote,
+                votes=self._votes,
+            )
             reply = await self._provider.complete(prompt, response_schema=JUDGE_SCHEMA)
             verdict = _parse(reply)
             if verdict is not None:

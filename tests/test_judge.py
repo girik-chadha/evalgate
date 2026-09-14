@@ -13,6 +13,7 @@ ASSERTION = JudgeAssertion(
 
 class SequenceProvider:
     model = "sequence"
+    params: dict[str, Any] = {}
 
     def __init__(self, replies: list[str]) -> None:
         self._replies = list(replies)
@@ -66,7 +67,15 @@ def test_prompt_carries_criterion_input_output_and_schema() -> None:
     assert "States the refund window" in prompt
     assert "How long do I have to return it?" in prompt
     assert "You have 30 days." in prompt
+    assert "vote 1 of 1" in prompt
     assert provider.schemas == [JUDGE_SCHEMA]
+
+
+def test_each_vote_gets_a_distinct_prompt() -> None:
+    provider = SequenceProvider([verdict(1.0)] * 3)
+    score(provider)
+    assert len(set(provider.prompts)) == 3
+    assert "vote 2 of 3" in provider.prompts[1]
 
 
 def test_fenced_json_is_still_parsed() -> None:

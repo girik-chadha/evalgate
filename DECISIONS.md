@@ -123,3 +123,11 @@ same answers, and `--no-cache` exists for when fresh samples are wanted.
 Alternative: one transaction per run, committed at the end.
 Chosen because a run killed at call 150 of 200 should keep 150 paid replies. A commit per write
 costs milliseconds against network calls that cost hundreds.
+
+## Judge votes carry their index in the prompt so the cache keeps them apart
+
+Alternative: bypass the cache for judge calls, or add a hidden salt to the cache key.
+Chosen because judge calls are most of the spend, so they must be cached, and three votes with
+byte-identical prompts would collapse to one cached reply. Naming the vote in the prompt keeps
+the key honest (the prompt really is different) and makes a cached re-run reproduce the same
+verdict rather than a fresh sample.
