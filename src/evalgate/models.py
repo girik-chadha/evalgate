@@ -89,6 +89,10 @@ class CaseResult(StrictModel):
         return self.error is None and all(s.passed for s in self.scores)
 
     @property
+    def failure_detail(self) -> str:
+        return self.error or "; ".join(s.detail for s in self.scores if not s.passed)
+
+    @property
     def score(self) -> float:
         if not self.scores:
             return 0.0

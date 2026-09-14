@@ -131,3 +131,20 @@ Chosen because judge calls are most of the spend, so they must be cached, and th
 byte-identical prompts would collapse to one cached reply. Naming the vote in the prompt keeps
 the key honest (the prompt really is different) and makes a cached re-run reproduce the same
 verdict rather than a fresh sample.
+
+## The baseline is the accepted state, and a new failure is anything failing outside it
+
+Alternative: fail the build whenever any case fails, baseline or not.
+Chosen because a known, accepted failure would otherwise block every PR until fixed, and because
+the claim the tool makes is "no worse than before", which needs a stored before. A failing case
+the baseline already had failing is unchanged; one it had passing, or did not have at all, is
+new. Accepting the current state is an explicit command, so accepted failures are visible in the
+committed baseline file.
+
+## Two levers gate a run: new failures, and mean score drop over shared cases
+
+Alternative: any drop fails the build, or one blended metric.
+Chosen because the cache makes unchanged cases return identical results, so a strict count of
+new failures is not noisy; only edited prompts resample. The score lever catches erosion that
+never flips an assertion, such as judge scores sliding from 0.95 to 0.75 above a 0.7 minimum.
+Means are taken over shared cases only, so adding or removing cases cannot fake an improvement.
