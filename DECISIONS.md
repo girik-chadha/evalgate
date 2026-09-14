@@ -41,3 +41,10 @@ Alternative: templates inline in the suite YAML, or a template engine such as Ji
 Chosen because the prompt is the thing under test: a prompt edit must be a file diff in a PR
 so that CI has an event to react to. One placeholder needs no engine and no escaping rules,
 so `str.replace` is enough until a real case needs more.
+
+## Providers raise ProviderError for transient failures, and only those are retried
+
+Alternative: retry on any exception.
+Chosen because retrying a bug in our own code would disguise it as flakiness and cost several
+paid calls per case before it surfaced. The provider is the only layer that can tell a timeout
+from a programming error, so it makes that classification.
