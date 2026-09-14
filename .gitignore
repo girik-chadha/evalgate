@@ -4,3 +4,9 @@ __pycache__/
 .env
 *.db
 .DS_Store
+.pytest_cache/
+.ruff_cache/
+dist/
+build/
+*.egg-info/
+CLAUDE.md
